@@ -53,9 +53,9 @@ def analyze_sentiment(text):
     compound = score["compound"]
 
     # Adjusted sentiment thresholds
-    if compound >= 0.1:  # Used to be 0.02
+    if compound >= 0.1:  
         return "Positive"
-    elif compound <= -0.1:  # Used to be -0.02
+    elif compound <= -0.1:  
         return "Negative"
     else:
         return "Neutral"
