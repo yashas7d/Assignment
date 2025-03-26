@@ -1,54 +1,41 @@
 import streamlit as st
 import requests
-import json
 
-st.set_page_config(page_title="News Summarization & Sentiment Analysis", layout="wide")
-st.title("News Summarization & Sentiment Analysis for Companies")
+st.title("News Summarization & Sentiment Analysis")
+company = st.text_input("Enter Company Name")
 
-# User input
-company = st.text_input("Enter Company Name", "Tesla")
-
-if st.button("Generate Report"):
-    payload = {"company": company}
-    
-    try:
-        response = requests.post("http://localhost:8000/analyze", json=payload)
-        
-        if response.status_code == 200:
-            data = response.json()
-
-            if "Company" in data and "Articles" in data:
-                st.subheader(f"Sentiment Report for {data['Company']}")
-
-                # Display each article's details
-                for article in data.get("Articles", []):
-                    st.markdown(f"**Title:** {article.get('Title', 'N/A')}")
-                    st.markdown(f"**Summary:** {article.get('Summary', 'N/A')}")
-                    st.markdown(f"**Sentiment:** {article.get('Sentiment', 'N/A')}")
-                    st.markdown(f"**Topics:** {', '.join(article.get('Topics', []))}")
+# Fetch News
+if st.button("Fetch News"):
+    if company:
+        try:
+            response = requests.get(f"http://127.0.0.1:5001/news?company={company}")  # Matches API port
+            if response.status_code == 200:
+                data = response.json()
+                st.write(f"### News for {data['company']}")
+                for article in data["articles"]:
+                    st.write(f"**Title:** {article['title']}")
+                    st.write(f"**Sentiment:** {article['sentiment']}")
+                    st.write(f"[Read More]({article['link']})")
                     st.write("---")
-
-                # Comparative sentiment analysis
-                if "Comparative Sentiment Score" in data:
-                    st.subheader("Comparative Sentiment Analysis")
-                    st.json(data["Comparative Sentiment Score"])
-                
-                # Final sentiment analysis summary
-                if "Final Sentiment Analysis" in data:
-                    st.markdown("### Final Sentiment Analysis")
-                    st.markdown(data["Final Sentiment Analysis"])
-                
-                # Audio playback
-                if "Audio" in data:
-                    st.markdown("### Hindi TTS Output")
-                    st.audio(data["Audio"])
             else:
-                st.error("Unexpected API response format.")
-        else:
-            st.error(f"Error {response.status_code}: {response.text}")
-    
-    except requests.exceptions.RequestException as e:
-        st.error(f"Request error: {str(e)}")
-    
-    except Exception as e:
-        st.error(f"Unexpected error: {str(e)}")
+                st.error("Error fetching news. Please try again.")
+        except requests.exceptions.ConnectionError:
+            st.error("Failed to connect to the API. Make sure the server is running.")
+    else:
+        st.error("Please enter a company name.")
+
+# Generate Hindi Speech
+if st.button("Generate Hindi Speech"):
+    if company:
+        text = f"{company} के समाचार विश्लेषण पूरा हुआ।"  # Proper Hindi sentence
+        try:
+            response = requests.post("http://127.0.0.1:5001/tts", json={"text": text})  # Matches API port
+            if response.status_code == 200:
+                audio_url = response.json()["audio_url"]
+                st.audio(audio_url)
+            else:
+                st.error("Error generating speech. Please try again.")
+        except requests.exceptions.ConnectionError:
+            st.error("Failed to connect to the API. Make sure the server is running.")
+    else:
+        st.error("Please enter a company name before generating speech.")
