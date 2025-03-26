@@ -1,20 +1,29 @@
-from fastapi import FastAPI, HTTPException
-from pydantic import BaseModel
-from utils import process_company_news
-import uvicorn
+from flask import Flask, request, jsonify
+from flask_cors import CORS
+from utils import get_news, analyze_sentiment, generate_tts
 
-app = FastAPI(title="News Summarization and Sentiment API")
+app = Flask(__name__)
+CORS(app)
 
-class CompanyRequest(BaseModel):
-    company: str
+@app.route("/news", methods=["GET"])
+def fetch_news():
+    company = request.args.get("company")
+    if not company:
+        return jsonify({"error": "Company name is required"}), 400
+    
+    articles = get_news(company)
+    
+    return jsonify({"company": company, "articles": articles})
 
-@app.post("/analyze")
-def analyze_news(request: CompanyRequest):
-    try:
-        result = process_company_news(request.company)
-        return result
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+@app.route("/tts", methods=["POST"])
+def text_to_speech():
+    data = request.get_json()
+    text = data.get("text", "")
+    if not text:
+        return jsonify({"error": "Text is required"}), 400
+
+    audio_path = generate_tts(text)
+    return jsonify({"audio_url": audio_path})
 
 if __name__ == "__main__":
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    app.run(debug=True, port=5001)  # Running on port 5001
