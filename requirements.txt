@@ -1,9 +1,11 @@
-streamlit
-fastapi
-uvicorn
 requests
 beautifulsoup4
+nltk
 transformers
 torch
-textblob
-gTTS
+datasets
+streamlit
+gradio
+flask
+flask-cors
+gtts
